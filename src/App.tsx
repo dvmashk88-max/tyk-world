@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
+import Hls from 'hls.js/light'
+import { useEffect, useRef, useState } from 'react'
 import { categories, CategoryId, pickRandom, Place, places, placesByCategory } from './places'
 
 const categoryById = Object.fromEntries(categories.map((category) => [category.id, category])) as Record<CategoryId, (typeof categories)[number]>
@@ -41,11 +42,8 @@ function Home({ onChoose }: { onChoose: (category?: CategoryId) => void }) {
   return (
     <main className="home-shell">
       <header className="topbar">
-        <a className="brand" href="#/" aria-label="ТЫК — на главную">
-          <span className="brand-mark">Т</span>
-          <span>ТЫК</span>
-        </a>
-        <span className="counter">30 мест</span>
+        <a className="brand" href="#/" aria-label="ТЫК — на главную"><span className="brand-mark">Т</span><span>ТЫК</span></a>
+        <span className="counter">10 LIVE</span>
       </header>
 
       <section className="hero" aria-labelledby="hero-title">
@@ -53,28 +51,19 @@ function Home({ onChoose }: { onChoose: (category?: CategoryId) => void }) {
         <div className="orbit orbit-two" aria-hidden="true" />
         <p className="eyebrow">Весь мир в одном нажатии</p>
         <h1 id="hero-title">Куда ты<br />попадёшь <em>сейчас?</em></h1>
-        <p className="intro">Живые камеры, круговые панорамы и туры по удивительным местам.</p>
+        <p className="intro">Только проверенные живые камеры. Видео запускается прямо здесь — без переходов на другие сайты.</p>
         <button className="surprise-button" type="button" onClick={() => onChoose()}>
-          <span className="dice" aria-hidden="true">🎲</span>
-          <span>ТЫК — УДИВИ МЕНЯ</span>
-          <span className="arrow" aria-hidden="true">↗</span>
+          <span className="dice" aria-hidden="true">🎲</span><span>ТЫК — УДИВИ МЕНЯ</span><span className="arrow" aria-hidden="true">↗</span>
         </button>
       </section>
 
       <section className="category-section" aria-labelledby="categories-title">
-        <div className="section-heading">
-          <h2 id="categories-title">Или выбери настроение</h2>
-          <span>6 направлений</span>
-        </div>
+        <div className="section-heading"><h2 id="categories-title">Или выбери настроение</h2><span>3 направления</span></div>
         <div className="category-grid">
           {categories.map((category, index) => (
-            <button
-              className="category-card"
-              key={category.id}
-              type="button"
+            <button className="category-card" key={category.id} type="button"
               style={{ '--accent': category.color, '--delay': `${index * 45}ms` } as React.CSSProperties}
-              onClick={() => onChoose(category.id)}
-            >
+              onClick={() => onChoose(category.id)}>
               <span className="category-emoji" aria-hidden="true">{category.emoji}</span>
               <span className="category-label">{category.label}</span>
               <span className="category-arrow" aria-hidden="true">↗</span>
@@ -83,28 +72,13 @@ function Home({ onChoose }: { onChoose: (category?: CategoryId) => void }) {
         </div>
       </section>
 
-      <footer><span>ТЫК</span> · официальный и публичный контент со всего мира</footer>
+      <footer><span>ТЫК</span> · 10 публичных LIVE-потоков · TOUR и 360° временно отключены</footer>
     </main>
   )
 }
 
 function Experience({ place, transitioning, onAgain }: { place: Place; transitioning: boolean; onAgain: () => void }) {
   const category = categoryById[place.category]
-  const [loaded, setLoaded] = useState(false)
-  const [slow, setSlow] = useState(false)
-
-  useEffect(() => {
-    if (!place.embedUrl) return
-    const timeout = window.setTimeout(() => setSlow(true), 8000)
-    return () => window.clearTimeout(timeout)
-  }, [place])
-
-  const facts = useMemo(() => {
-    if (place.type === 'LIVE') return place.availability ?? 'Прямой эфир'
-    if (place.type === '360°') return 'Крути обзор пальцем или мышью'
-    return 'Самостоятельный виртуальный маршрут'
-  }, [place])
-
   return (
     <main className={`experience-shell ${transitioning ? 'is-changing' : ''}`} style={{ '--accent': category.color } as React.CSSProperties}>
       <header className="experience-header">
@@ -115,54 +89,16 @@ function Experience({ place, transitioning, onAgain }: { place: Place; transitio
 
       <article className="place-card">
         <div className="media-frame">
-          <div className="media-topline">
-            <span className={`type-badge type-${place.type.toLowerCase().replace('°', '')}`}><i />{place.type}</span>
-            <span>{place.sourceName}</span>
-          </div>
-
-          {place.embedUrl ? (
-            <>
-              {!loaded && <div className="media-loader"><span>{category.emoji}</span><p>Открываем портал…</p></div>}
-              <iframe
-                key={place.id}
-                className={loaded ? 'is-loaded' : ''}
-                src={place.embedUrl}
-                title={`${place.title} — ${place.sourceName}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                referrerPolicy="strict-origin-when-cross-origin"
-                onLoad={() => setLoaded(true)}
-              />
-              {slow && !loaded && (
-                <div className="embed-fallback">
-                  <p>Поток не отвечает</p>
-                  <a href={place.sourceUrl} target="_blank" rel="noreferrer">Открыть у источника ↗</a>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="portal-preview">
-              <div className="portal-glow" />
-              <span className="portal-emoji" aria-hidden="true">{category.emoji}</span>
-              <p>Этот источник защищает контент<br />от встраивания</p>
-              <a href={place.sourceUrl} target="_blank" rel="noreferrer">Открыть портал <span>↗</span></a>
-            </div>
-          )}
+          <div className="media-topline"><span className="type-badge type-live"><i />LIVE</span><span>{place.sourceName}</span></div>
+          <LivePlayer place={place} emoji={category.emoji} />
         </div>
 
         <div className="place-copy">
           <div className="location">◎ {place.location}</div>
           <h1>{place.title}</h1>
           <p>{place.description}</p>
-          <div className="source-row">
-            <span className="pulse-dot" aria-hidden="true" />
-            <span>{facts}</span>
-          </div>
-          {place.embedUrl && (
-            <a className="source-link" href={place.sourceUrl} target="_blank" rel="noreferrer">
-              Официальный источник: {place.sourceName} ↗
-            </a>
-          )}
+          <div className="source-row"><span className="pulse-dot" aria-hidden="true" /><span>{place.availability}</span></div>
+          <a className="source-link" href={place.sourceUrl} target="_blank" rel="noreferrer">Источник: {place.sourceName} ↗</a>
         </div>
       </article>
 
@@ -171,6 +107,79 @@ function Experience({ place, transitioning, onAgain }: { place: Place; transitio
         <span>Следующее: {category.label.toLowerCase()}</span>
       </div>
     </main>
+  )
+}
+
+type PlaybackState = 'loading' | 'playing' | 'error'
+
+function LivePlayer({ place, emoji }: { place: Place; emoji: string }) {
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const [state, setState] = useState<PlaybackState>('loading')
+  const [attempt, setAttempt] = useState(0)
+
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video) return
+
+    let hls: Hls | undefined
+    let cancelled = false
+    setState('loading')
+
+    const startPlayback = () => {
+      if (cancelled) return
+      video.muted = true
+      void video.play().catch(() => {
+        if (!cancelled) setState('error')
+      })
+    }
+
+    if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = place.streamUrl
+      video.addEventListener('loadedmetadata', startPlayback, { once: true })
+    } else if (Hls.isSupported()) {
+      hls = new Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
+        backBufferLength: 30,
+        manifestLoadingTimeOut: 12000,
+        fragLoadingTimeOut: 15000,
+      })
+      hls.loadSource(place.streamUrl)
+      hls.attachMedia(video)
+      hls.on(Hls.Events.MANIFEST_PARSED, startPlayback)
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (data.fatal && !cancelled) setState('error')
+      })
+    } else {
+      queueMicrotask(() => {
+        if (!cancelled) setState('error')
+      })
+    }
+
+    return () => {
+      cancelled = true
+      video.pause()
+      video.removeAttribute('src')
+      video.load()
+      hls?.destroy()
+    }
+  }, [place.streamUrl, attempt])
+
+  return (
+    <div className="live-player" data-playback-state={state} data-place-id={place.id}>
+      {state === 'loading' && <div className="media-loader"><span>{emoji}</span><p>Подключаем прямой эфир…</p></div>}
+      <video ref={videoRef} className={state === 'playing' ? 'is-playing' : ''}
+        aria-label={`${place.title} — прямой эфир`} controls muted autoPlay playsInline
+        onPlaying={() => setState('playing')}
+        onWaiting={() => setState((current) => current === 'error' ? current : 'loading')}
+        onError={() => setState('error')} />
+      {state === 'error' && (
+        <div className="embed-fallback" role="alert"><span aria-hidden="true">📡</span>
+          <p>Камера не ответила. Попробуем подключиться заново.</p>
+          <button type="button" onClick={() => setAttempt((value) => value + 1)}>Повторить</button>
+        </div>
+      )}
+    </div>
   )
 }
 
